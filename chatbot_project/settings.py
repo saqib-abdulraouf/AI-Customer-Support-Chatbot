@@ -68,7 +68,7 @@ ROOT_URLCONF = "chatbot_project.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "chatbot" / "templates"],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -103,7 +103,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = [BASE_DIR / "chatbot" / "static"]
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # When behind a proxy/load balancer that terminates TLS, ensure Django knows the request is secure
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

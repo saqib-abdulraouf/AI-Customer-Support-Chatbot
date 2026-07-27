@@ -7,7 +7,7 @@ from .services import get_bot_reply
 
 def chat_page(request):
     """Renders the simple chat frontend."""
-    return render(request, "chatbot/chat.html")
+    return render(request, "chat.html")
 
 
 @csrf_exempt
