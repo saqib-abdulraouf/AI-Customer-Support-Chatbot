@@ -1,9 +1,9 @@
 """
 Core chatbot logic: builds the prompt and calls the Gemini API.
 
-All company data (name, products, delivery, contact, behavior rules) is
-loaded from  company_data.json  — edit that file to change anything.
-This file contains only generic logic, zero company-specific text.
+All knowledge is auto-loaded from the  knowledge/  folder.
+Drop any .json file in that folder and restart the server —
+the bot will automatically know about it. Zero code changes needed.
 """
 
 import os
@@ -24,62 +24,92 @@ except ImportError:
         pass
 
 
-# ── Load company data from JSON ──────────────────────────────────────
-_DATA_FILE = Path(__file__).resolve().parent / "company_data.json"
-
-with open(_DATA_FILE, "r", encoding="utf-8") as _f:
-    _COMPANY = json.load(_f)
+# ── Auto-load ALL JSON files from knowledge/ folder ──────────────────
+_KNOWLEDGE_DIR = Path(__file__).resolve().parent.parent / "knowledge"
 
 
-def _build_system_prompt(data: dict) -> str:
-    """Build the full system prompt dynamically from JSON data only."""
+def _load_all_knowledge() -> dict:
+    """Scan the knowledge/ folder and load every .json file into a dict."""
+    knowledge = {}
+    if not _KNOWLEDGE_DIR.exists():
+        return knowledge
+    for json_file in sorted(_KNOWLEDGE_DIR.glob("*.json")):
+        with open(json_file, "r", encoding="utf-8") as f:
+            knowledge[json_file.stem] = json.load(f)
+    return knowledge
 
+
+def _json_to_readable(data, indent=0) -> str:
+    """Recursively convert any JSON structure into clean readable text."""
     lines = []
+    prefix = "  " * indent
 
-    # ── Identity
-    lines.append(
-        f"You are the AI Customer Support Assistant for "
-        f"**{data['company_name']}** — {data['tagline']}"
-    )
+    if isinstance(data, dict):
+        for key, val in data.items():
+            label = key.replace("_", " ").title()
+            if isinstance(val, (dict, list)):
+                lines.append(f"{prefix}**{label}**:")
+                lines.append(_json_to_readable(val, indent + 1))
+            else:
+                display = val if val is not None else "—"
+                lines.append(f"{prefix}- **{label}**: {display}")
 
-    # ── Behavior rules
-    lines.append("\n## Your Behavior")
-    for rule in data.get("bot_behavior", []):
-        lines.append(f"- {rule}")
-
-    # ── Product catalog
-    lines.append("\n## Product Catalog\n")
-    lines.append("| Product | Price (PKR) | Warranty |")
-    lines.append("|---------|-------------|----------|")
-    for p in data.get("products", []):
-        warranty = p["warranty"] if p.get("warranty") else "—"
-        lines.append(f"| {p['name']} | {p['price']} | {warranty} |")
-
-    # ── Delivery
-    dlv = data.get("delivery", {})
-    lines.append("\n## Delivery Information")
-    for key, val in dlv.items():
-        label = key.replace("_", " ").title()
-        lines.append(f"- **{label}**: {val}")
-
-    # ── Business hours
-    hrs = data.get("business_hours", {})
-    lines.append("\n## Business Hours")
-    for key, val in hrs.items():
-        label = key.replace("_", " ").title()
-        lines.append(f"- **{label}**: {val}")
-
-    # ── Contact
-    cnt = data.get("contact", {})
-    lines.append("\n## Contact Information")
-    for key, val in cnt.items():
-        label = key.replace("_", " ").title()
-        lines.append(f"- **{label}**: {val}")
+    elif isinstance(data, list):
+        for item in data:
+            if isinstance(item, dict):
+                # Format list items (products, FAQs, etc.)
+                parts = []
+                for k, v in item.items():
+                    label = k.replace("_", " ").title()
+                    display = v if v is not None else "—"
+                    parts.append(f"{label}: {display}")
+                lines.append(f"{prefix}- {' | '.join(parts)}")
+            else:
+                lines.append(f"{prefix}- {item}")
+    else:
+        lines.append(f"{prefix}{data}")
 
     return "\n".join(lines)
 
 
-SYSTEM_PROMPT = _build_system_prompt(_COMPANY)
+def _build_system_prompt(knowledge: dict) -> str:
+    """Build the full system prompt from all loaded knowledge files."""
+    lines = []
+
+    # ── Identity (from company.json)
+    company = knowledge.get("company", {})
+    name = company.get("company_name", "Our Company")
+    tagline = company.get("tagline", "")
+    lines.append(f"You are the AI Customer Support Assistant for **{name}** — {tagline}")
+
+    # ── Behavior rules (from company.json)
+    rules = company.get("bot_behavior", [])
+    if rules:
+        lines.append("\n## Your Behavior")
+        for rule in rules:
+            lines.append(f"- {rule}")
+
+    # ── All other knowledge files (auto-detected)
+    for filename, data in knowledge.items():
+        if filename == "company":
+            # Company already handled above, but include remaining fields
+            extras = {k: v for k, v in data.items()
+                      if k not in ("company_name", "tagline", "bot_behavior")}
+            if extras:
+                lines.append("\n## Company Details")
+                lines.append(_json_to_readable(extras))
+            continue
+
+        # Auto-generate section from filename
+        section_title = filename.replace("_", " ").title()
+        lines.append(f"\n## {section_title}")
+        lines.append(_json_to_readable(data))
+
+    return "\n".join(lines)
+
+
+_KNOWLEDGE = _load_all_knowledge()
+SYSTEM_PROMPT = _build_system_prompt(_KNOWLEDGE)
 
 # Recommended model sequence for Gemini API
 MODEL_CANDIDATES = ["gemini-2.0-flash", "gemini-flash-latest", "gemini-2.5-flash"]

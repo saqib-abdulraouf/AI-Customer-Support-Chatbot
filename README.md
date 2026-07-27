@@ -46,6 +46,13 @@ AI-Customer-Support-Chatbot/
 ├── .env.example                     # Environment variable template
 ├── .gitignore
 │
+├── knowledge/                       # ⭐ All business data (auto-loaded)
+│   ├── company.json                 # Company name, contact, hours, bot behavior
+│   ├── products.json                # Product catalog (names, prices, warranty)
+│   ├── delivery.json                # Delivery policy & charges
+│   ├── faq.json                     # Frequently asked questions
+│   └── return_policy.json           # Return & refund policy
+│
 ├── static/                          # Static assets (root level)
 │   ├── css/
 │   │   └── style.css                # Primary stylesheet (widget, responsive, animations)
@@ -60,9 +67,8 @@ AI-Customer-Support-Chatbot/
 │   ├── urls.py                      # Root URL config (/ and /api/)
 │   └── wsgi.py
 │
-└── chatbot/                         # Main chatbot application
-    ├── company_data.json            # ⭐ All company data (edit this to change business info)
-    ├── services.py                  # Generic Gemini API logic (reads from JSON)
+└── chatbot/                         # Main chatbot application (pure logic)
+    ├── services.py                  # Generic Gemini API logic (auto-reads knowledge/)
     ├── views.py                     # chat_page + chat_api endpoint
     ├── urls.py                      # App-level URL patterns (/api/chat/)
     └── apps.py
@@ -147,42 +153,18 @@ Navigate to **http://127.0.0.1:8000/** — click the chat icon in the bottom-rig
 
 ---
 
-## 🔧 Customizing Company Data
+## 🔧 Customizing Knowledge Base
 
-All company information is stored in `chatbot/company_data.json`. To change the business:
+All business information is stored as modular `.json` files inside the `knowledge/` directory:
 
-```json
-{
-  "company_name": "Your Company Name",
-  "tagline": "Your company description here.",
-  "products": [
-    { "name": "Product A", "price": "Rs. 1,000", "warranty": "1 Year" },
-    { "name": "Product B", "price": "Rs. 2,500", "warranty": null }
-  ],
-  "delivery": {
-    "local": "FREE",
-    "other_cities": "Rs. 200",
-    "delivery_time": "3–5 business days"
-  },
-  "business_hours": {
-    "days": "Monday – Friday",
-    "timing": "10:00 AM – 6:00 PM",
-    "closed": "Saturday & Sunday"
-  },
-  "contact": {
-    "phone": "0300-0000000",
-    "email": "info@yourcompany.com",
-    "location": "Your City, Pakistan"
-  },
-  "bot_behavior": [
-    "Always respond in English.",
-    "Be polite and professional.",
-    "Never make up information."
-  ]
-}
-```
+- `knowledge/company.json` — Store metadata, business hours, contact info, and custom bot behavior rules.
+- `knowledge/products.json` — Product details, pricing, categories, and warranty terms.
+- `knowledge/delivery.json` — City-wise shipping rates, delivery timeframes, and dispatch rules.
+- `knowledge/faq.json` — Frequently asked questions (e.g. COD, installation, store visits).
+- `knowledge/return_policy.json` — Return window, conditions, and refund policies.
 
-Just edit this file and restart the server — **no Python code changes needed!**
+> **💡 Modular Architecture:** You can drop **any new `.json` file** (e.g. `discounts.json`, `branches.json`, `terms.json`) into the `knowledge/` folder. The chatbot automatically detects, parses, and integrates new files into its knowledge base upon server restart — **no Python code edits required!**
+
 
 ---
 

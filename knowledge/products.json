@@ -1,0 +1,28 @@
+{
+  "products": [
+    {
+      "name": "Ceiling Fan",
+      "price": "Rs. 5,500",
+      "warranty": "2 Years",
+      "category": "Fans"
+    },
+    {
+      "name": "Pedestal Fan",
+      "price": "Rs. 7,200",
+      "warranty": null,
+      "category": "Fans"
+    },
+    {
+      "name": "Air Cooler",
+      "price": "Rs. 18,000",
+      "warranty": "1 Year",
+      "category": "Cooling"
+    },
+    {
+      "name": "Exhaust Fan",
+      "price": "Rs. 3,200",
+      "warranty": null,
+      "category": "Fans"
+    }
+  ]
+}

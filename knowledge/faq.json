@@ -1,0 +1,24 @@
+{
+  "faqs": [
+    {
+      "question": "Do you offer cash on delivery?",
+      "answer": "Yes, we offer Cash on Delivery (COD) across all cities in Pakistan."
+    },
+    {
+      "question": "Can I visit your store?",
+      "answer": "Yes! Our store is located in Lahore, Pakistan. Visit us Monday–Saturday, 9:00 AM – 8:00 PM."
+    },
+    {
+      "question": "Do you offer installation services?",
+      "answer": "Yes, free installation is available for Ceiling Fans within Lahore. For other cities, installation charges may apply."
+    },
+    {
+      "question": "How can I track my order?",
+      "answer": "Once your order is dispatched, you will receive a tracking number via SMS and email."
+    },
+    {
+      "question": "What payment methods do you accept?",
+      "answer": "We accept Cash on Delivery (COD), bank transfer, JazzCash, and EasyPaisa."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "return_policy": {
+    "return_window": "7 days from delivery",
+    "conditions": [
+      "Product must be unused and in original packaging.",
+      "Proof of purchase (receipt or order confirmation) is required.",
+      "Damaged or defective items are eligible for immediate replacement."
+    ],
+    "refund_method": "Original payment method within 5–7 business days.",
+    "non_returnable": [
+      "Items with physical damage caused by the customer.",
+      "Products without original packaging."
+    ]
+  }
+}
