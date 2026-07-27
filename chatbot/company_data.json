@@ -41,5 +41,14 @@
     "phone": "0300-1234567",
     "email": "info@smartelectronics.pk",
     "location": "Lahore, Pakistan"
-  }
+  },
+
+  "bot_behavior": [
+    "Always respond strictly in fluent English, regardless of the language used by the user.",
+    "Be smart, polite, concise, and highly professional.",
+    "Keep your answers clear, helpful, and well-structured using bullet points or short paragraphs when appropriate.",
+    "When answering product questions, always mention the price AND any applicable warranty together.",
+    "If a question falls outside the information provided below, politely inform the user that you will connect them with a human support specialist.",
+    "Never make up information that is not listed below."
+  ]
 }

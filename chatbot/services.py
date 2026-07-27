@@ -1,8 +1,9 @@
 """
 Core chatbot logic: builds the prompt and calls the Gemini API.
 
-Company data is loaded from company_data.json — edit that file to
-update products, prices, delivery info, etc. without touching this code.
+All company data (name, products, delivery, contact, behavior rules) is
+loaded from  company_data.json  — edit that file to change anything.
+This file contains only generic logic, zero company-specific text.
 """
 
 import os
@@ -24,65 +25,61 @@ except ImportError:
 
 
 # ── Load company data from JSON ──────────────────────────────────────
-DATA_FILE = Path(__file__).resolve().parent / "company_data.json"
+_DATA_FILE = Path(__file__).resolve().parent / "company_data.json"
 
-with open(DATA_FILE, "r", encoding="utf-8") as f:
-    COMPANY = json.load(f)
+with open(_DATA_FILE, "r", encoding="utf-8") as _f:
+    _COMPANY = json.load(_f)
 
 
 def _build_system_prompt(data: dict) -> str:
-    """Build the system prompt dynamically from the company JSON data."""
-    company = data["company_name"]
-    tagline = data["tagline"]
+    """Build the full system prompt dynamically from JSON data only."""
 
-    # Product catalog table
-    product_rows = ""
-    for p in data["products"]:
-        warranty = p["warranty"] if p["warranty"] else "—"
-        product_rows += f"| {p['name']:<14} | {p['price']:<11} | {warranty:<9} |\n"
+    lines = []
 
-    # Delivery info
-    dlv = data["delivery"]
+    # ── Identity
+    lines.append(
+        f"You are the AI Customer Support Assistant for "
+        f"**{data['company_name']}** — {data['tagline']}"
+    )
 
-    # Business hours
-    hrs = data["business_hours"]
+    # ── Behavior rules
+    lines.append("\n## Your Behavior")
+    for rule in data.get("bot_behavior", []):
+        lines.append(f"- {rule}")
 
-    # Contact
-    cnt = data["contact"]
+    # ── Product catalog
+    lines.append("\n## Product Catalog\n")
+    lines.append("| Product | Price (PKR) | Warranty |")
+    lines.append("|---------|-------------|----------|")
+    for p in data.get("products", []):
+        warranty = p["warranty"] if p.get("warranty") else "—"
+        lines.append(f"| {p['name']} | {p['price']} | {warranty} |")
 
-    return f"""
-You are the AI Customer Support Assistant for **{company}** — {tagline}
+    # ── Delivery
+    dlv = data.get("delivery", {})
+    lines.append("\n## Delivery Information")
+    for key, val in dlv.items():
+        label = key.replace("_", " ").title()
+        lines.append(f"- **{label}**: {val}")
 
-## Your Behavior
-- Always respond strictly in fluent English, regardless of the language used by the user.
-- Be smart, polite, concise, and highly professional.
-- Keep your answers clear, helpful, and well-structured using bullet points or short paragraphs when appropriate.
-- When answering product questions, always mention the price AND any applicable warranty together.
-- If a question falls outside the information provided below, politely inform the user that you will connect them with a human support specialist.
-- Never make up information that is not listed below.
+    # ── Business hours
+    hrs = data.get("business_hours", {})
+    lines.append("\n## Business Hours")
+    for key, val in hrs.items():
+        label = key.replace("_", " ").title()
+        lines.append(f"- **{label}**: {val}")
 
-## Product Catalog
+    # ── Contact
+    cnt = data.get("contact", {})
+    lines.append("\n## Contact Information")
+    for key, val in cnt.items():
+        label = key.replace("_", " ").title()
+        lines.append(f"- **{label}**: {val}")
 
-| Product        | Price (PKR) | Warranty  |
-|----------------|-------------|-----------|
-{product_rows}
-## Delivery Information
-- **Lahore**: {dlv['lahore']} delivery
-- **Other Cities**: {dlv['other_cities']} delivery charges
-- **Delivery Time**: {dlv['delivery_time']}
-
-## Business Hours
-- **Days**: {hrs['days']}
-- **Timing**: {hrs['timing']} (closed on {hrs['closed']})
-
-## Contact Information
-- **Phone**: {cnt['phone']}
-- **Email**: {cnt['email']}
-- **Location**: {cnt['location']}
-"""
+    return "\n".join(lines)
 
 
-SYSTEM_PROMPT = _build_system_prompt(COMPANY)
+SYSTEM_PROMPT = _build_system_prompt(_COMPANY)
 
 # Recommended model sequence for Gemini API
 MODEL_CANDIDATES = ["gemini-2.0-flash", "gemini-flash-latest", "gemini-2.5-flash"]
