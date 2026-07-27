@@ -1,23 +1,32 @@
 from django.contrib import admin
-from .models import PDFDocument
+from .models import Company, PDFDocument
+
+
+@admin.register(Company)
+class CompanyAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug', 'api_key', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('name', 'slug', 'api_key')
+    readonly_fields = ('api_key', 'slug')
 
 
 @admin.register(PDFDocument)
 class PDFDocumentAdmin(admin.ModelAdmin):
-    list_display = ('title', 'pdf_file', 'uploaded_at', 'is_processed', 'chunk_count')
-    list_filter = ('is_processed', 'uploaded_at')
-    search_fields = ('title',)
+    list_display = ('title', 'company', 'pdf_file', 'uploaded_at', 'is_processed', 'chunk_count')
+    list_filter = ('company', 'is_processed', 'uploaded_at')
+    search_fields = ('title', 'company__name')
     actions = ['reindex_documents']
 
     def save_model(self, request, obj, form, change):
-        """Auto-index PDF document into ChromaDB upon save."""
+        """Auto-index PDF document into ChromaDB upon save with company_id scoping."""
         super().save_model(request, obj, form, change)
         try:
             count = obj.process_and_index()
+            tenant_info = f" for '{obj.company.name}'" if obj.company else ""
             self.message_user(
                 request,
                 f"Successfully extracted text via PyMuPDF, generated Gemini embeddings, "
-                f"and indexed {count} text chunks into ChromaDB for '{obj.title}'."
+                f"and indexed {count} text chunks into ChromaDB{tenant_info}."
             )
         except Exception as exc:
             self.message_user(

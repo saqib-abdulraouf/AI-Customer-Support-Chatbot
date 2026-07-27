@@ -110,7 +110,7 @@ def get_embedding(text: str, task_type: str = "retrieval_document") -> list[floa
     return None
 
 
-def index_pdf_document(doc_id: int | str, title: str, pdf_path: str | Path) -> int:
+def index_pdf_document(doc_id: int | str, title: str, pdf_path: str | Path, company_id: int | str | None = None) -> int:
     """
     Full Pipeline:
     Extract text (PyMuPDF) → Chunk text → Generate embeddings (Gemini) → Store in ChromaDB
@@ -131,6 +131,8 @@ def index_pdf_document(doc_id: int | str, title: str, pdf_path: str | Path) -> i
     ids = []
     metadatas = []
 
+    tenant_id_str = str(company_id) if company_id else "default"
+
     for idx, chunk in enumerate(chunks):
         embedding = get_embedding(chunk, task_type="retrieval_document")
         if embedding:
@@ -141,7 +143,8 @@ def index_pdf_document(doc_id: int | str, title: str, pdf_path: str | Path) -> i
             metadatas.append({
                 "doc_id": str(doc_id),
                 "doc_title": title,
-                "chunk_index": idx
+                "chunk_index": idx,
+                "company_id": tenant_id_str
             })
 
     if documents and embeddings:
@@ -164,9 +167,9 @@ def delete_document_from_index(doc_id: int | str):
         print(f"[RAG Delete Error] {exc}")
 
 
-def search_similar_chunks(query_text: str, top_k: int = 3) -> list[str]:
+def search_similar_chunks(query_text: str, company_id: int | str | None = None, top_k: int = 3) -> list[str]:
     """
-    Customer asks question → Embed query → Vector search in ChromaDB → Return relevant text chunks
+    Customer asks question → Embed query → Vector search in ChromaDB (filtered by company_id if provided) → Return relevant text chunks
     """
     query_embedding = get_embedding(query_text, task_type="retrieval_query")
     if not query_embedding:
@@ -174,10 +177,14 @@ def search_similar_chunks(query_text: str, top_k: int = 3) -> list[str]:
 
     try:
         collection = get_chroma_collection()
-        results = collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k
-        )
+        query_kwargs = {
+            "query_embeddings": [query_embedding],
+            "n_results": top_k
+        }
+        if company_id:
+            query_kwargs["where"] = {"company_id": str(company_id)}
+
+        results = collection.query(**query_kwargs)
 
         if results and "documents" in results and results["documents"]:
             # flatten document lists

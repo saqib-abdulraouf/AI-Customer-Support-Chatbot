@@ -24,18 +24,30 @@ except ImportError:
         pass
 
 
-# ── Auto-load ALL JSON files from knowledge/ folder ──────────────────
+# ── Auto-load JSON files from knowledge/ folder ──────────────────────
 _KNOWLEDGE_DIR = Path(__file__).resolve().parent.parent / "knowledge"
 
 
-def _load_all_knowledge() -> dict:
-    """Scan the knowledge/ folder and load every .json file into a dict."""
+def _load_all_knowledge(company_slug: str | None = None) -> dict:
+    """Scan knowledge/ folder (or knowledge/<company_slug>/ if present) and load .json files."""
     knowledge = {}
-    if not _KNOWLEDGE_DIR.exists():
+    target_dir = _KNOWLEDGE_DIR
+
+    if company_slug and (_KNOWLEDGE_DIR / company_slug).is_dir():
+        target_dir = _KNOWLEDGE_DIR / company_slug
+
+    if not target_dir.exists():
         return knowledge
-    for json_file in sorted(_KNOWLEDGE_DIR.glob("*.json")):
+
+    for json_file in sorted(target_dir.glob("*.json")):
         with open(json_file, "r", encoding="utf-8") as f:
             knowledge[json_file.stem] = json.load(f)
+
+    # Fallback to root company.json if tenant subfolder doesn't have company.json
+    if "company" not in knowledge and (_KNOWLEDGE_DIR / "company.json").exists():
+        with open(_KNOWLEDGE_DIR / "company.json", "r", encoding="utf-8") as f:
+            knowledge["company"] = json.load(f)
+
     return knowledge
 
 
@@ -57,7 +69,6 @@ def _json_to_readable(data, indent=0) -> str:
     elif isinstance(data, list):
         for item in data:
             if isinstance(item, dict):
-                # Format list items (products, FAQs, etc.)
                 parts = []
                 for k, v in item.items():
                     label = k.replace("_", " ").title()
@@ -72,27 +83,26 @@ def _json_to_readable(data, indent=0) -> str:
     return "\n".join(lines)
 
 
-def _build_system_prompt(knowledge: dict) -> str:
+def _build_system_prompt(knowledge: dict, company_obj=None) -> str:
     """Build the full system prompt from all loaded knowledge files."""
     lines = []
 
-    # ── Identity (from company.json)
-    company = knowledge.get("company", {})
-    name = company.get("company_name", "Our Company")
-    tagline = company.get("tagline", "")
+    # ── Identity (from company.json or Company model)
+    company_data = knowledge.get("company", {})
+    name = company_obj.name if company_obj else company_data.get("company_name", "Our Company")
+    tagline = company_data.get("tagline", "")
     lines.append(f"You are the AI Customer Support Assistant for **{name}** — {tagline}")
 
-    # ── Behavior rules (from company.json)
-    rules = company.get("bot_behavior", [])
+    # ── Behavior rules
+    rules = company_data.get("bot_behavior", [])
     if rules:
         lines.append("\n## Your Behavior")
         for rule in rules:
             lines.append(f"- {rule}")
 
-    # ── All other knowledge files (auto-detected)
+    # ── All other knowledge files
     for filename, data in knowledge.items():
         if filename == "company":
-            # Company already handled above, but include remaining fields
             extras = {k: v for k, v in data.items()
                       if k not in ("company_name", "tagline", "bot_behavior")}
             if extras:
@@ -100,7 +110,6 @@ def _build_system_prompt(knowledge: dict) -> str:
                 lines.append(_json_to_readable(extras))
             continue
 
-        # Auto-generate section from filename
         section_title = filename.replace("_", " ").title()
         lines.append(f"\n## {section_title}")
         lines.append(_json_to_readable(data))
@@ -110,27 +119,38 @@ def _build_system_prompt(knowledge: dict) -> str:
 
 from .rag_service import search_similar_chunks
 
-_KNOWLEDGE = _load_all_knowledge()
-SYSTEM_PROMPT = _build_system_prompt(_KNOWLEDGE)
+_DEFAULT_KNOWLEDGE = _load_all_knowledge()
+DEFAULT_SYSTEM_PROMPT = _build_system_prompt(_DEFAULT_KNOWLEDGE)
 
 # Recommended model sequence for Gemini API
 MODEL_CANDIDATES = ["gemini-2.0-flash", "gemini-flash-latest", "gemini-2.5-flash"]
 
 
-def get_bot_reply(user_message: str, conversation_history: list | None = None) -> str:
+def get_bot_reply(user_message: str, conversation_history: list | None = None, company=None) -> str:
     """
-    Sends the user's message (plus optional prior turns) to Gemini LLM and returns the assistant's reply.
+    Sends user's message to Gemini LLM and returns assistant's reply.
 
-    Integrates RAG: Queries ChromaDB for similar document vector chunks and injects them as context.
-    conversation_history: list of {"role": "user"/"assistant", "content": str}
+    Integrates Multi-Tenant RAG:
+    - Filters ChromaDB vector search by `company_id`
+    - Loads per-tenant knowledge JSON files
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return "GEMINI_API_KEY missing. Please set GEMINI_API_KEY in your .env file."
 
-    # RAG Vector Search: find top 3 relevant chunks from ChromaDB
-    rag_chunks = search_similar_chunks(user_message, top_k=3)
-    dynamic_prompt = SYSTEM_PROMPT
+    company_id = company.id if company else None
+    company_slug = company.slug if company else None
+
+    # Load tenant-specific system prompt if custom company provided
+    if company_slug:
+        tenant_knowledge = _load_all_knowledge(company_slug=company_slug)
+        system_prompt = _build_system_prompt(tenant_knowledge, company_obj=company)
+    else:
+        system_prompt = DEFAULT_SYSTEM_PROMPT
+
+    # RAG Vector Search: find top 3 relevant chunks from ChromaDB (filtered by tenant company_id)
+    rag_chunks = search_similar_chunks(user_message, company_id=company_id, top_k=3)
+    dynamic_prompt = system_prompt
     if rag_chunks:
         context_str = "\n\n".join([f"--- Chunk {i+1} ---\n{chunk}" for i, chunk in enumerate(rag_chunks)])
         dynamic_prompt += f"\n\n## Relevant Context from Uploaded Documents (RAG)\n{context_str}\n"

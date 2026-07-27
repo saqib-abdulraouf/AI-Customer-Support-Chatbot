@@ -194,17 +194,63 @@ All business information is stored as modular `.json` files inside the `knowledg
 
 ---
 
+## 🏢 Multi-Tenant SaaS Architecture (100+ Companies)
+
+The platform natively supports **Multi-Tenancy**, enabling multiple client companies to use the chatbot with 100% data and vector isolation:
+
+1. **Company (Tenant) Management**: Create companies in Django Admin (`/admin/`). Each tenant receives an auto-generated unique `api_key` and `slug`.
+2. **Vector Data Isolation**: Every PDF uploaded for a company is tagged with `company_id` metadata. ChromaDB vector search enforces `where={"company_id": str(company_id)}` filtering during RAG queries.
+3. **Tenant Knowledge Base**: Place company-specific knowledge files inside `knowledge/<company_slug>/` for per-client customization.
+
+---
+
+## 🌐 Enterprise Distributed System Scale (10,000+ Companies)
+
+```
+[10,000 Companies' Websites (Global Edge CDN)]
+                         │
+                         ▼
+             [Cloudflare / API Gateway]
+                         │
+        ┌────────────────┴────────────────┐
+        ▼                                 ▼
+[Chat API Microservices (Go/FastAPI)]   [PDF Ingestion Pipeline (Kafka)]
+        │                                 │
+  (Semantic Cache Check)                  ▼
+        ├────────► [Redis Cache]    [PyMuPDF + Gemini Embedder]
+        │                │                │
+ (If Cache Miss)         │                ▼
+        ▼                │      [Milvus / Pinecone Vector DB]
+  [Gemini API Pool] ◄────┘
+```
+
+When scaling to **10,000+ active client companies** (serving millions of chats daily at >50,000 RPS concurrency), the infrastructure scales via:
+
+1. **Distributed Vector Cluster**: Transition from local ChromaDB to cloud-hosted **Pinecone Enterprise / Milvus Cluster** with tenant namespaces.
+2. **Semantic Vector Caching**: Utilize **RedisVL / GPTCache** to return cached answers (<5ms) for recurring questions without calling LLM APIs, reducing LLM API costs by up to 70%.
+3. **Async Event-Driven Pipelines**: Offload heavy PDF extraction and embedding tasks to **Kafka / RabbitMQ** background workers.
+4. **Kubernetes Auto-Scaling**: Deploy containerized FastAPI / Go Chat Gateways on **AWS EKS / GCP GKE** with Horizontal Pod Auto-scaling (HPA).
+
+---
+
 ## 🔌 API Reference
 
 ### `POST /api/chat/`
 
-Send a user message with optional conversation history.
+Send a user message with optional conversation history and tenant authentication.
+
+**Headers (Optional):**
+```http
+X-API-Key: key_504610ea094c499791d403adba1ff6d3
+```
 
 **Request Body:**
 
 ```json
 {
   "message": "What are the delivery charges?",
+  "api_key": "key_504610ea094c499791d403adba1ff6d3",
+  "company": "smart-electronics",
   "history": [
     { "role": "user", "content": "Hello" },
     { "role": "assistant", "content": "Hi there! How can I help you today?" }
@@ -216,7 +262,8 @@ Send a user message with optional conversation history.
 
 ```json
 {
-  "reply": "Delivery in Lahore is completely FREE! For other cities, a delivery charge of Rs. 250 applies. Delivery typically takes 2–4 business days."
+  "reply": "Delivery in Lahore is completely FREE! For other cities, a delivery charge of Rs. 250 applies. Delivery typically takes 2–4 business days.",
+  "tenant": "Smart Electronics"
 }
 ```
 
