@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatLauncher = document.getElementById('chatLauncher');
   const chatWindow = document.getElementById('chatWindow');
   const closeWidgetBtn = document.getElementById('closeWidgetBtn');
+  const resetChatHeaderBtn = document.getElementById('resetChatHeaderBtn');
   const menuToggleBtn = document.getElementById('menuToggleBtn');
   const menuDrawer = document.getElementById('menuDrawer');
   const newChatDrawerBtn = document.getElementById('newChatDrawerBtn');
@@ -13,6 +14,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const copyToast = document.getElementById('copyToast');
 
   let history = [];
+
+  // Set initial message timestamp
+  const initialTime = document.getElementById('initialTime');
+  if (initialTime) {
+    initialTime.innerText = getCurrentTimeString();
+  }
+
+  function getCurrentTimeString() {
+    const now = new Date();
+    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
 
   // Open Chat Window with Animation & Hide Launcher Icon
   function openChatWindow() {
@@ -30,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (chatLauncher) chatLauncher.addEventListener('click', openChatWindow);
   if (closeWidgetBtn) closeWidgetBtn.addEventListener('click', closeChatWindow);
+  if (resetChatHeaderBtn) resetChatHeaderBtn.addEventListener('click', resetConversation);
 
   // Toggle Top Menu Drawer
   if (menuToggleBtn) {
@@ -96,13 +109,51 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1500);
   }
 
+  function parseSimpleMarkdown(text) {
+    if (!text) return '';
+    let html = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    // Bold text **text**
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    // Code inline `code`
+    html = html.replace(/`(.*?)`/g, '<code style="background:#e2e8f0; padding:2px 6px; border-radius:6px; font-size:13px; font-family:monospace;">$1</code>');
+
+    // Bullet list items
+    html = html.replace(/^- (.*$)/gim, '• $1');
+
+    // Newlines to <br>
+    html = html.replace(/\n/g, '<br>');
+    return html;
+  }
+
   function addMessage(text, sender) {
     const row = document.createElement('div');
     row.className = `msg-row ${sender}`;
 
+    if (sender === 'bot') {
+      const avatar = document.createElement('div');
+      avatar.className = 'bot-avatar-small';
+      avatar.innerHTML = `<i class="fa-solid fa-robot"></i>`;
+      row.appendChild(avatar);
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg-content-wrapper';
+
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
-    bubble.innerText = text;
+    bubble.innerHTML = parseSimpleMarkdown(text);
+
+    const timestamp = document.createElement('span');
+    timestamp.className = 'msg-timestamp';
+    timestamp.innerText = getCurrentTimeString();
+
+    wrapper.appendChild(bubble);
+    wrapper.appendChild(timestamp);
 
     const copyBtn = document.createElement('button');
     copyBtn.className = 'copy-icon-btn';
@@ -110,8 +161,9 @@ document.addEventListener('DOMContentLoaded', () => {
     copyBtn.setAttribute('title', 'Copy message');
     copyBtn.innerHTML = `<i class="fa-regular fa-copy"></i>`;
 
-    row.appendChild(bubble);
+    row.appendChild(wrapper);
     row.appendChild(copyBtn);
+
     chatBody.appendChild(row);
     chatBody.scrollTop = chatBody.scrollHeight;
   }
@@ -119,6 +171,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function showTypingIndicator() {
     const row = document.createElement('div');
     row.className = 'msg-row bot typing-row';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'bot-avatar-small';
+    avatar.innerHTML = `<i class="fa-solid fa-robot"></i>`;
+    row.appendChild(avatar);
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg-content-wrapper';
 
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
@@ -128,7 +188,9 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    row.appendChild(bubble);
+    wrapper.appendChild(bubble);
+    row.appendChild(wrapper);
+
     chatBody.appendChild(row);
     chatBody.scrollTop = chatBody.scrollHeight;
     return row;
@@ -190,8 +252,12 @@ document.addEventListener('DOMContentLoaded', () => {
     history = [];
     chatBody.innerHTML = `
       <div class="msg-row bot">
-        <div class="msg-bubble">
-          Conversation reset! How can I help you today?
+        <div class="bot-avatar-small"><i class="fa-solid fa-robot"></i></div>
+        <div class="msg-content-wrapper">
+          <div class="msg-bubble">
+            Conversation reset! 👋 How can I assist you with Smart Electronics today?
+          </div>
+          <span class="msg-timestamp">${getCurrentTimeString()}</span>
         </div>
         <button class="copy-icon-btn" onclick="copyMessageText(this)" title="Copy message">
           <i class="fa-regular fa-copy"></i>
@@ -203,9 +269,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (newChatDrawerBtn) newChatDrawerBtn.addEventListener('click', resetConversation);
   if (clearHistoryBtn) clearHistoryBtn.addEventListener('click', resetConversation);
-
-  window.loadRecentTopic = function (topicTitle) {
-    resetConversation();
-    addMessage(`Loaded topic: ${topicTitle}. How can I assist you with this?`, 'bot');
-  };
 });

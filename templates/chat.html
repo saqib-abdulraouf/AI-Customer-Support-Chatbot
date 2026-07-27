@@ -5,113 +5,190 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Customer Support • Intelligent Assistant</title>
+  <title>Smart Electronics • AI Customer Support Chatbot</title>
 
-  <!-- Google Fonts & FontAwesome -->
+  <!-- Meta tags for SEO & PWA -->
+  <meta name="description" content="AI-Powered Customer Support Assistant for Smart Electronics. Instant answers on products, pricing, delivery, and warranty.">
+  <meta name="theme-color" content="#4f46e5">
+
+  <!-- Google Fonts & FontAwesome 6 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-  <!-- Django Static CSS -->
+  <!-- Primary Stylesheet -->
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 
 <body>
 
+  <!-- DEMO LANDING PAGE FOR SMART ELECTRONICS STORE -->
+  <div class="site-wrapper">
+    <header class="site-header">
+      <div class="brand-title">
+        <div class="brand-logo"><i class="fa-solid fa-bolt"></i></div>
+        <span>Smart Electronics</span>
+      </div>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="#products"><i class="fa-solid fa-fan"></i> Products</a></li>
+          <li><a href="#delivery"><i class="fa-solid fa-truck-fast"></i> Delivery</a></li>
+          <li><a href="#contact"><i class="fa-solid fa-headset"></i> Contact</a></li>
+        </ul>
+      </nav>
+      <div class="header-cta">
+        <span class="support-badge"><i class="fa-solid fa-sparkles"></i> 24/7 AI Support</span>
+      </div>
+    </header>
+
+    <main class="hero-container">
+      <div class="hero-badge">
+        <i class="fa-solid fa-robot"></i> AI-Powered Assistance Live
+      </div>
+      <h1>Premium Home Appliances & Electronics</h1>
+      <p>Explore ceiling fans, pedestal fans, air coolers, and exhaust fans with free Lahore delivery & official warranty.</p>
+
+      <div class="product-cards-grid">
+        <div class="product-card">
+          <div class="card-icon"><i class="fa-solid fa-fan"></i></div>
+          <h3>Ceiling Fan</h3>
+          <div class="card-price">Rs. 5,500</div>
+          <div class="card-tag">2 Years Warranty</div>
+        </div>
+
+        <div class="product-card">
+          <div class="card-icon"><i class="fa-solid fa-wind"></i></div>
+          <h3>Air Cooler</h3>
+          <div class="card-price">Rs. 18,000</div>
+          <div class="card-tag">1 Year Warranty</div>
+        </div>
+
+        <div class="product-card">
+          <div class="card-icon"><i class="fa-solid fa-temperature-arrow-down"></i></div>
+          <h3>Pedestal Fan</h3>
+          <div class="card-price">Rs. 7,200</div>
+          <div class="card-tag">High Speed</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
   <!-- FLOATING CHATBOT LAUNCHER BUTTON -->
-  <button class="chat-launcher" id="chatLauncher" title="Open AI Support">
+  <button class="chat-launcher" id="chatLauncher" title="Open AI Customer Support">
+    <div class="launcher-glow"></div>
     <i class="fa-solid fa-comments" id="launcherIcon"></i>
+    <span class="launcher-tooltip">Ask AI Assistant</span>
     <div class="online-indicator"></div>
   </button>
 
   <!-- FLOATING CHAT WIDGET WINDOW -->
   <div class="chat-window" id="chatWindow">
 
-    <!-- Header Bar with Top Menu Button (☰) -->
+    <!-- Header Bar -->
     <div class="widget-header">
       <div class="header-left">
-        <button class="menu-toggle-btn" id="menuToggleBtn" title="Menu & Recent Chats">
-          <i class="fa-solid fa-bars"></i>
+        <button class="menu-toggle-btn" id="menuToggleBtn" title="Menu & Options">
+          <i class="fa-solid fa-bars-staggered"></i>
         </button>
+        <div class="bot-avatar">
+          <i class="fa-solid fa-robot"></i>
+        </div>
         <div class="header-title-block">
-          <h3>AI Assistant</h3>
-          <p>Online • Instant Support</p>
+          <h3>Smart AI Assistant</h3>
+          <p><span class="status-dot"></span> Online • Instant Answers</p>
         </div>
       </div>
       <div class="header-right-btns">
+        <button class="header-action-btn" id="resetChatHeaderBtn" title="Reset Chat">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
         <button class="close-widget-btn" id="closeWidgetBtn" title="Close Chat">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
     </div>
 
-    <!-- TOP MENU DRAWER (SLIDE DOWN FOR RECENT CHATS & OPTIONS) -->
+    <!-- TOP MENU DRAWER -->
     <div class="menu-drawer" id="menuDrawer">
       <button class="menu-drawer-btn" id="newChatDrawerBtn">
-        <i class="fa-solid fa-plus"></i> Start New Conversation
+        <i class="fa-solid fa-plus-circle"></i> Start New Conversation
       </button>
 
-      <div class="drawer-section-title">Recent Conversations</div>
+      <div class="drawer-section-title">Quick Topics</div>
       <div class="recent-chats-list">
-        <div class="recent-chat-item" onclick="loadRecentTopic('General Support & Information')">
-          <i class="fa-regular fa-message"></i> General Support & Information
+        <div class="recent-chat-item" onclick="sendQuickPrompt('Ceiling fan ki price kya hai?')">
+          <i class="fa-solid fa-fan"></i> Ceiling Fan Price & Warranty
         </div>
-        <div class="recent-chat-item" onclick="loadRecentTopic('Shipping & Delivery Status')">
-          <i class="fa-solid fa-truck-fast"></i> Shipping & Delivery Status
+        <div class="recent-chat-item" onclick="sendQuickPrompt('Delivery charges kitne hain?')">
+          <i class="fa-solid fa-truck-fast"></i> Delivery Charges & Time
         </div>
-        <div class="recent-chat-item" onclick="loadRecentTopic('Billing & Payment Options')">
-          <i class="fa-regular fa-credit-card"></i> Billing & Payment Options
+        <div class="recent-chat-item" onclick="sendQuickPrompt('What are your store hours and contact number?')">
+          <i class="fa-solid fa-clock"></i> Business Hours & Contact
+        </div>
+        <div class="recent-chat-item" onclick="sendQuickPrompt('What is your return policy?')">
+          <i class="fa-solid fa-shield-halved"></i> Return & Replacement Policy
         </div>
       </div>
 
-      <button class="menu-drawer-btn" id="clearHistoryBtn"
-        style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2); background: #fef2f2;">
-        <i class="fa-solid fa-trash-can"></i> Clear Chat History
+      <button class="menu-drawer-btn danger-btn" id="clearHistoryBtn">
+        <i class="fa-solid fa-trash-can"></i> Clear History & Context
       </button>
     </div>
 
-    <!-- Copy Toast -->
+    <!-- Copy Toast Notification -->
     <div class="copy-toast" id="copyToast">
-      <i class="fa-solid fa-check"></i> Text copied to clipboard
+      <i class="fa-solid fa-circle-check"></i> Text copied to clipboard
     </div>
 
     <!-- Chat Messages Stream -->
     <div class="widget-body" id="chatBody">
       <div class="msg-row bot">
-        <div class="msg-bubble">
-          Hello! Welcome to AI Customer Support 👋 How can I help you today?
+        <div class="bot-avatar-small"><i class="fa-solid fa-robot"></i></div>
+        <div class="msg-content-wrapper">
+          <div class="msg-bubble">
+            Hello! 👋 Welcome to <strong>Smart Electronics</strong> AI Support. How can I assist you with our home appliances, pricing, or delivery today?
+          </div>
+          <span class="msg-timestamp" id="initialTime">Just now</span>
         </div>
-        <!-- PURE COPY ICON ONLY ON HOVER -->
-        <button class="copy-icon-btn" onclick="copyMessageText(this)" title="Copy text">
+        <button class="copy-icon-btn" onclick="copyMessageText(this)" title="Copy message">
           <i class="fa-regular fa-copy"></i>
         </button>
       </div>
 
+      <!-- Quick Chips Carousel -->
       <div class="quick-suggestions" id="quickSuggestions">
-        <button class="chip-btn" onclick="sendQuickPrompt('What are your delivery times?')">⚡ Delivery Info</button>
-        <button class="chip-btn" onclick="sendQuickPrompt('How can I track my order?')">📦 Order Tracking</button>
-        <button class="chip-btn" onclick="sendQuickPrompt('What payment methods are supported?')">💳 Payment
-          Options</button>
+        <button class="chip-btn" onclick="sendQuickPrompt('Ceiling fan ki price kya hai?')">
+          <i class="fa-solid fa-fan"></i> Ceiling Fan Price
+        </button>
+        <button class="chip-btn" onclick="sendQuickPrompt('Delivery charges kitne hain?')">
+          <i class="fa-solid fa-truck"></i> Delivery Charges
+        </button>
+        <button class="chip-btn" onclick="sendQuickPrompt('Air Cooler price and warranty')">
+          <i class="fa-solid fa-snowflake"></i> Air Cooler Info
+        </button>
+        <button class="chip-btn" onclick="sendQuickPrompt('What is your return policy?')">
+          <i class="fa-solid fa-shield-cat"></i> Return Policy
+        </button>
       </div>
     </div>
 
     <!-- Input Footer -->
     <div class="widget-footer">
       <div class="input-row">
-        <input type="text" class="chat-input" id="userInput" placeholder="Type your message in English..."
-          autocomplete="off">
-        <button class="send-btn" id="sendBtn">
+        <input type="text" class="chat-input" id="userInput" placeholder="Ask a question in English..." autocomplete="off">
+        <button class="send-btn" id="sendBtn" title="Send message">
           <i class="fa-solid fa-paper-plane"></i>
         </button>
+      </div>
+      <div class="footer-branding">
+        <span>Powered by <strong>Gemini AI</strong> • Smart Electronics</span>
       </div>
     </div>
 
   </div>
 
-  <!-- Django Static JS -->
+  <!-- Primary JavaScript -->
   <script src="{% static 'js/main.js' %}"></script>
 </body>
 
