@@ -12,7 +12,8 @@ A modern, fully responsive AI-powered customer support chatbot built for **Smart
 ## ✨ Features
 
 - **Google Gemini AI** — Powered by `gemini-2.0-flash` with automatic model fallback
-- **JSON-Driven Company Data** — All business info (products, prices, delivery, contact) lives in a single `company_data.json` file — no code changes needed to update
+- **RAG Architecture (PDF Upload)** — Upload PDFs via Django Admin, extract text with PyMuPDF, chunk text, generate vector embeddings with Gemini `text-embedding-004`, and store in persistent ChromaDB
+- **JSON-Driven Company Data** — Modular business knowledge files stored in `knowledge/` directory
 - **Floating Chat Widget** — Bottom-right launcher icon that opens a sleek chat window
 - **Smooth Animations** — Spring-style open/close transitions for the chat widget
 - **Responsive Design** — Full-screen on mobile (≤600px), floating card on desktop (440×640px)
@@ -24,15 +25,34 @@ A modern, fully responsive AI-powered customer support chatbot built for **Smart
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Architecture & RAG Flow
 
 ```
-User clicks chat icon
-    → Chat widget opens (animated)
-        → User types message
-            → JS fetch() POST /api/chat/
-                → Django view → services.py loads company_data.json → Gemini API
-                    → AI reply → Chat window
+                        Admin
+                          │
+                      Upload PDF
+                          │
+                    Django Backend
+                          │
+                Extract Text (PyMuPDF)
+                          │
+                  Split into Chunks
+                          │
+             Generate Embeddings (Gemini)
+                          │
+                  Store in ChromaDB
+                          │
+────────────────────────────────────────────────────
+
+                  Customer asks question
+                          │
+                Similar Chunks Search
+                          │
+             Send Context + Question
+                          │
+                      Gemini
+                          │
+                       Answer
 ```
 
 ---
@@ -42,11 +62,14 @@ User clicks chat icon
 ```
 AI-Customer-Support-Chatbot/
 ├── manage.py                        # Django management script
-├── requirements.txt                 # Python dependencies
+├── requirements.txt                 # Python dependencies (PyMuPDF, ChromaDB, Gemini, Django)
 ├── .env.example                     # Environment variable template
 ├── .gitignore
 │
-├── knowledge/                       # ⭐ All business data (auto-loaded)
+├── chroma_db/                       # Persistent ChromaDB vector database
+├── media/                           # Uploaded PDF document storage
+│
+├── knowledge/                       # ⭐ Modular business data (auto-loaded)
 │   ├── company.json                 # Company name, contact, hours, bot behavior
 │   ├── products.json                # Product catalog (names, prices, warranty)
 │   ├── delivery.json                # Delivery policy & charges
@@ -63,12 +86,15 @@ AI-Customer-Support-Chatbot/
 │   └── chat.html                    # Main chat page template
 │
 ├── chatbot_project/                 # Django project configuration
-│   ├── settings.py                  # Settings (static files, apps, middleware)
-│   ├── urls.py                      # Root URL config (/ and /api/)
+│   ├── settings.py                  # Settings (media files, static, apps, middleware)
+│   ├── urls.py                      # Root URL config (/admin/, /, and /api/)
 │   └── wsgi.py
 │
-└── chatbot/                         # Main chatbot application (pure logic)
-    ├── services.py                  # Generic Gemini API logic (auto-reads knowledge/)
+└── chatbot/                         # Main chatbot application
+    ├── admin.py                     # Django Admin for PDF upload & vector indexing
+    ├── models.py                    # PDFDocument model with auto-indexing signals
+    ├── rag_service.py               # PyMuPDF extraction, chunking, Gemini embeddings & ChromaDB
+    ├── services.py                  # Gemini LLM orchestration + RAG context injection
     ├── views.py                     # chat_page + chat_api endpoint
     ├── urls.py                      # App-level URL patterns (/api/chat/)
     └── apps.py
@@ -208,11 +234,13 @@ Send a user message with optional conversation history.
 | Layer | Technology |
 |-------|------------|
 | **Backend** | Django 5.0, Django REST Framework |
-| **AI Model** | Google Gemini API (`gemini-2.0-flash`) |
+| **AI Model** | Google Gemini API (`gemini-2.0-flash` + `text-embedding-004`) |
+| **RAG Vector Database** | ChromaDB (persistent local vector store) |
+| **PDF Processing** | PyMuPDF (`fitz`) text extraction |
 | **Frontend** | HTML5, CSS3, Vanilla JavaScript |
 | **Icons** | Font Awesome 6 |
 | **Database** | SQLite (default) |
-| **Config** | JSON-driven company data |
+| **Config** | Modular JSON-driven knowledge base |
 | **Environment** | python-dotenv |
 | **CORS** | django-cors-headers |
 
@@ -234,13 +262,13 @@ Send a user message with optional conversation history.
 
 ## 🗺️ Roadmap
 
-- [x] **JSON-Driven Company Data** — All business info loaded from `company_data.json`
-- [ ] **RAG (Retrieval-Augmented Generation)** — Upload PDFs/catalogs, chunk & embed with LangChain, store vectors in ChromaDB/FAISS
+- [x] **JSON-Driven Company Data** — Modular knowledge base in `knowledge/` folder
+- [x] **RAG (Retrieval-Augmented Generation)** — Upload PDFs in Django Admin, extract text with PyMuPDF, embed with Gemini (`text-embedding-004`), and store in ChromaDB
+- [x] **Django Admin Panel** — Manage PDF documents and trigger vector re-indexing directly from `/admin/`
 - [ ] **WhatsApp Integration** — Connect via Twilio API for omnichannel support
 - [ ] **Human Escalation** — "Talk to a human" button for low-confidence answers
 - [ ] **User Authentication** — Session-based chat history persistence
 - [ ] **Analytics Dashboard** — Track common queries, response times, and satisfaction
-- [ ] **Django Admin Panel** — Edit company data from admin UI instead of JSON file
 
 ---
 

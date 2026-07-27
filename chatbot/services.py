@@ -108,6 +108,8 @@ def _build_system_prompt(knowledge: dict) -> str:
     return "\n".join(lines)
 
 
+from .rag_service import search_similar_chunks
+
 _KNOWLEDGE = _load_all_knowledge()
 SYSTEM_PROMPT = _build_system_prompt(_KNOWLEDGE)
 
@@ -119,13 +121,21 @@ def get_bot_reply(user_message: str, conversation_history: list | None = None) -
     """
     Sends the user's message (plus optional prior turns) to Gemini LLM and returns the assistant's reply.
 
+    Integrates RAG: Queries ChromaDB for similar document vector chunks and injects them as context.
     conversation_history: list of {"role": "user"/"assistant", "content": str}
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return "GEMINI_API_KEY missing. Please set GEMINI_API_KEY in your .env file."
 
-    prompt_parts = [SYSTEM_PROMPT]
+    # RAG Vector Search: find top 3 relevant chunks from ChromaDB
+    rag_chunks = search_similar_chunks(user_message, top_k=3)
+    dynamic_prompt = SYSTEM_PROMPT
+    if rag_chunks:
+        context_str = "\n\n".join([f"--- Chunk {i+1} ---\n{chunk}" for i, chunk in enumerate(rag_chunks)])
+        dynamic_prompt += f"\n\n## Relevant Context from Uploaded Documents (RAG)\n{context_str}\n"
+
+    prompt_parts = [dynamic_prompt]
     if conversation_history:
         for turn in conversation_history:
             role = turn.get("role")
