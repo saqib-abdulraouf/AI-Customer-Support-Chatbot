@@ -7,12 +7,12 @@ A modern, fully responsive AI-powered customer support chatbot built for **Smart
 ![Gemini](https://img.shields.io/badge/Google_Gemini-API-orange?logo=google&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-
 ---
 
 ## ✨ Features
 
 - **Google Gemini AI** — Powered by `gemini-2.0-flash` with automatic model fallback
+- **JSON-Driven Company Data** — All business info (products, prices, delivery, contact) lives in a single `company_data.json` file — no code changes needed to update
 - **Floating Chat Widget** — Bottom-right launcher icon that opens a sleek chat window
 - **Smooth Animations** — Spring-style open/close transitions for the chat widget
 - **Responsive Design** — Full-screen on mobile (≤600px), floating card on desktop (440×640px)
@@ -31,7 +31,7 @@ User clicks chat icon
     → Chat widget opens (animated)
         → User types message
             → JS fetch() POST /api/chat/
-                → Django view → Gemini API
+                → Django view → services.py loads company_data.json → Gemini API
                     → AI reply → Chat window
 ```
 
@@ -40,12 +40,20 @@ User clicks chat icon
 ## 📁 Project Structure
 
 ```
-ai_chatbot_mvp/
+AI-Customer-Support-Chatbot/
 ├── manage.py                        # Django management script
 ├── requirements.txt                 # Python dependencies
 ├── .env.example                     # Environment variable template
 ├── .gitignore
-├── db.sqlite3                       # SQLite database
+│
+├── static/                          # Static assets (root level)
+│   ├── css/
+│   │   └── style.css                # Primary stylesheet (widget, responsive, animations)
+│   └── js/
+│       └── main.js                  # Primary JS (widget logic, API calls, copy, menu)
+│
+├── templates/                       # HTML templates (root level)
+│   └── chat.html                    # Main chat page template
 │
 ├── chatbot_project/                 # Django project configuration
 │   ├── settings.py                  # Settings (static files, apps, middleware)
@@ -53,26 +61,29 @@ ai_chatbot_mvp/
 │   └── wsgi.py
 │
 └── chatbot/                         # Main chatbot application
-    ├── views.py                     # chat_page (renders UI) + chat_api (POST endpoint)
-    ├── services.py                  # Gemini API integration + system prompt
+    ├── company_data.json            # ⭐ All company data (edit this to change business info)
+    ├── services.py                  # Generic Gemini API logic (reads from JSON)
+    ├── views.py                     # chat_page + chat_api endpoint
     ├── urls.py                      # App-level URL patterns (/api/chat/)
-    ├── apps.py
-    │
-    ├── templates/
-    │   └── chatbot/
-    │       └── chat.html            # Main HTML template ({% load static %})
-    │
-    └── static/
-        ├── chatbot/
-        │   ├── css/
-        │   │   └── style.css        # Primary stylesheet (widget, responsive, animations)
-        │   └── js/
-        │       └── main.js          # Primary JS (widget logic, API calls, copy, menu)
-        ├── css/
-        │   └── chat.css             # Fallback/legacy stylesheet
-        └── js/
-            └── chat.js              # Fallback/legacy script
+    └── apps.py
 ```
+
+---
+
+## 🏢 Demo Company — Smart Electronics
+
+This project uses a **fictional company** for portfolio/demo purposes:
+
+| Info | Details |
+|------|---------|
+| **Company** | Smart Electronics — Lahore, Pakistan |
+| **Products** | Ceiling Fan (₨5,500), Pedestal Fan (₨7,200), Air Cooler (₨18,000), Exhaust Fan (₨3,200) |
+| **Delivery** | Lahore: FREE · Other Cities: ₨250 · Time: 2–4 days |
+| **Warranty** | Ceiling Fan: 2 years · Air Cooler: 1 year |
+| **Hours** | Mon–Sat, 9:00 AM – 8:00 PM |
+| **Contact** | 0300-1234567 · info@smartelectronics.pk |
+
+> **💡 To change the company:** Just edit `chatbot/company_data.json` — no code changes required!
 
 ---
 
@@ -86,8 +97,8 @@ ai_chatbot_mvp/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/ai_chatbot_mvp.git
-cd ai_chatbot_mvp
+git clone https://github.com/saqib-abdulraouf/AI-Customer-Support-Chatbot.git
+cd AI-Customer-Support-Chatbot
 ```
 
 ### 2. Create a virtual environment
@@ -120,7 +131,7 @@ Edit `.env` with your credentials:
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 DJANGO_SECRET_KEY=your-random-secret-key
-DEBUG=True
+DJANGO_DEBUG=True
 ```
 
 ### 5. Run migrations & start the server
@@ -133,6 +144,45 @@ python manage.py runserver
 ### 6. Open in browser
 
 Navigate to **http://127.0.0.1:8000/** — click the chat icon in the bottom-right corner to start chatting!
+
+---
+
+## 🔧 Customizing Company Data
+
+All company information is stored in `chatbot/company_data.json`. To change the business:
+
+```json
+{
+  "company_name": "Your Company Name",
+  "tagline": "Your company description here.",
+  "products": [
+    { "name": "Product A", "price": "Rs. 1,000", "warranty": "1 Year" },
+    { "name": "Product B", "price": "Rs. 2,500", "warranty": null }
+  ],
+  "delivery": {
+    "local": "FREE",
+    "other_cities": "Rs. 200",
+    "delivery_time": "3–5 business days"
+  },
+  "business_hours": {
+    "days": "Monday – Friday",
+    "timing": "10:00 AM – 6:00 PM",
+    "closed": "Saturday & Sunday"
+  },
+  "contact": {
+    "phone": "0300-0000000",
+    "email": "info@yourcompany.com",
+    "location": "Your City, Pakistan"
+  },
+  "bot_behavior": [
+    "Always respond in English.",
+    "Be polite and professional.",
+    "Never make up information."
+  ]
+}
+```
+
+Just edit this file and restart the server — **no Python code changes needed!**
 
 ---
 
@@ -158,7 +208,7 @@ Send a user message with optional conversation history.
 
 ```json
 {
-  "reply": "Our standard delivery charges vary depending on your location. Could you please share your city so I can provide accurate details?"
+  "reply": "Delivery in Lahore is completely FREE! For other cities, a delivery charge of Rs. 250 applies. Delivery typically takes 2–4 business days."
 }
 ```
 
@@ -180,6 +230,7 @@ Send a user message with optional conversation history.
 | **Frontend** | HTML5, CSS3, Vanilla JavaScript |
 | **Icons** | Font Awesome 6 |
 | **Database** | SQLite (default) |
+| **Config** | JSON-driven company data |
 | **Environment** | python-dotenv |
 | **CORS** | django-cors-headers |
 
@@ -201,12 +252,13 @@ Send a user message with optional conversation history.
 
 ## 🗺️ Roadmap
 
-- [ ] **Business Context Injection** — Load company info (prices, policies, contact) into the system prompt via Django admin panel
+- [x] **JSON-Driven Company Data** — All business info loaded from `company_data.json`
 - [ ] **RAG (Retrieval-Augmented Generation)** — Upload PDFs/catalogs, chunk & embed with LangChain, store vectors in ChromaDB/FAISS
 - [ ] **WhatsApp Integration** — Connect via Twilio API for omnichannel support
 - [ ] **Human Escalation** — "Talk to a human" button for low-confidence answers
 - [ ] **User Authentication** — Session-based chat history persistence
 - [ ] **Analytics Dashboard** — Track common queries, response times, and satisfaction
+- [ ] **Django Admin Panel** — Edit company data from admin UI instead of JSON file
 
 ---
 
@@ -215,6 +267,7 @@ Send a user message with optional conversation history.
 - **CSRF** is exempted on `/api/chat/` since it's a public-facing API called via JS `fetch()` with no session/auth. Revisit this if you add user authentication.
 - **Model Fallback**: The service layer tries models in order: `gemini-2.0-flash` → `gemini-flash-latest` → `gemini-2.5-flash`. If one is unavailable, it automatically falls through to the next.
 - **Clipboard API** requires a secure context (HTTPS or localhost). A `document.execCommand('copy')` fallback is included for non-secure environments.
+- **Company data** is loaded once at server start. Restart the server after editing `company_data.json`.
 
 ---
 
