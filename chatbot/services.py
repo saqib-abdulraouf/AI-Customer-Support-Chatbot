@@ -1,10 +1,13 @@
 """
 Core chatbot logic: builds the prompt and calls the Gemini API.
 
-This version strictly uses Google Gemini API.
+Company data is loaded from company_data.json — edit that file to
+update products, prices, delivery info, etc. without touching this code.
 """
 
 import os
+import json
+from pathlib import Path
 
 # Gemini SDK support
 genai = None
@@ -20,8 +23,35 @@ except ImportError:
         pass
 
 
-SYSTEM_PROMPT = """
-You are the AI Customer Support Assistant for **Smart Electronics** — a trusted electronics store based in Lahore, Pakistan, specializing in home appliances and fans.
+# ── Load company data from JSON ──────────────────────────────────────
+DATA_FILE = Path(__file__).resolve().parent / "company_data.json"
+
+with open(DATA_FILE, "r", encoding="utf-8") as f:
+    COMPANY = json.load(f)
+
+
+def _build_system_prompt(data: dict) -> str:
+    """Build the system prompt dynamically from the company JSON data."""
+    company = data["company_name"]
+    tagline = data["tagline"]
+
+    # Product catalog table
+    product_rows = ""
+    for p in data["products"]:
+        warranty = p["warranty"] if p["warranty"] else "—"
+        product_rows += f"| {p['name']:<14} | {p['price']:<11} | {warranty:<9} |\n"
+
+    # Delivery info
+    dlv = data["delivery"]
+
+    # Business hours
+    hrs = data["business_hours"]
+
+    # Contact
+    cnt = data["contact"]
+
+    return f"""
+You are the AI Customer Support Assistant for **{company}** — {tagline}
 
 ## Your Behavior
 - Always respond strictly in fluent English, regardless of the language used by the user.
@@ -35,29 +65,24 @@ You are the AI Customer Support Assistant for **Smart Electronics** — a truste
 
 | Product        | Price (PKR) | Warranty  |
 |----------------|-------------|-----------|
-| Ceiling Fan    | Rs. 5,500   | 2 Years   |
-| Pedestal Fan   | Rs. 7,200   | —         |
-| Air Cooler     | Rs. 18,000  | 1 Year    |
-| Exhaust Fan    | Rs. 3,200   | —         |
-
+{product_rows}
 ## Delivery Information
-- **Lahore**: FREE delivery
-- **Other Cities**: Rs. 250 delivery charges
-- **Delivery Time**: 2–4 business days
+- **Lahore**: {dlv['lahore']} delivery
+- **Other Cities**: {dlv['other_cities']} delivery charges
+- **Delivery Time**: {dlv['delivery_time']}
 
 ## Business Hours
-- **Days**: Monday – Saturday
-- **Timing**: 9:00 AM – 8:00 PM (closed on Sundays)
+- **Days**: {hrs['days']}
+- **Timing**: {hrs['timing']} (closed on {hrs['closed']})
 
 ## Contact Information
-- **Phone**: 0300-1234567
-- **Email**: info@smartelectronics.pk
-- **Location**: Lahore, Pakistan
-
-## Example Interactions
-- If asked "Ceiling fan ki price kya hai?" → respond: "Smart Electronics mein Ceiling Fan ki price Rs. 5,500 hai aur is par 2 saal ki warranty milti hai."
-- If asked "Delivery charges kitne hain?" → respond: "Lahore mein delivery free hai. Doosre shehron ke liye delivery charges Rs. 250 hain."
+- **Phone**: {cnt['phone']}
+- **Email**: {cnt['email']}
+- **Location**: {cnt['location']}
 """
+
+
+SYSTEM_PROMPT = _build_system_prompt(COMPANY)
 
 # Recommended model sequence for Gemini API
 MODEL_CANDIDATES = ["gemini-2.0-flash", "gemini-flash-latest", "gemini-2.5-flash"]
