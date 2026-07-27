@@ -1,0 +1,118 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Customer Support • Intelligent Assistant</title>
+
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Django Static CSS -->
+  <link rel="stylesheet" href="{% static 'chatbot/css/style.css' %}">
+</head>
+
+<body>
+
+  <!-- FLOATING CHATBOT LAUNCHER BUTTON -->
+  <button class="chat-launcher" id="chatLauncher" title="Open AI Support">
+    <i class="fa-solid fa-comments" id="launcherIcon"></i>
+    <div class="online-indicator"></div>
+  </button>
+
+  <!-- FLOATING CHAT WIDGET WINDOW -->
+  <div class="chat-window" id="chatWindow">
+
+    <!-- Header Bar with Top Menu Button (☰) -->
+    <div class="widget-header">
+      <div class="header-left">
+        <button class="menu-toggle-btn" id="menuToggleBtn" title="Menu & Recent Chats">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-block">
+          <h3>AI Assistant</h3>
+          <p>Online • Instant Support</p>
+        </div>
+      </div>
+      <div class="header-right-btns">
+        <button class="close-widget-btn" id="closeWidgetBtn" title="Close Chat">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- TOP MENU DRAWER (SLIDE DOWN FOR RECENT CHATS & OPTIONS) -->
+    <div class="menu-drawer" id="menuDrawer">
+      <button class="menu-drawer-btn" id="newChatDrawerBtn">
+        <i class="fa-solid fa-plus"></i> Start New Conversation
+      </button>
+
+      <div class="drawer-section-title">Recent Conversations</div>
+      <div class="recent-chats-list">
+        <div class="recent-chat-item" onclick="loadRecentTopic('General Support & Information')">
+          <i class="fa-regular fa-message"></i> General Support & Information
+        </div>
+        <div class="recent-chat-item" onclick="loadRecentTopic('Shipping & Delivery Status')">
+          <i class="fa-solid fa-truck-fast"></i> Shipping & Delivery Status
+        </div>
+        <div class="recent-chat-item" onclick="loadRecentTopic('Billing & Payment Options')">
+          <i class="fa-regular fa-credit-card"></i> Billing & Payment Options
+        </div>
+      </div>
+
+      <button class="menu-drawer-btn" id="clearHistoryBtn"
+        style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2); background: #fef2f2;">
+        <i class="fa-solid fa-trash-can"></i> Clear Chat History
+      </button>
+    </div>
+
+    <!-- Copy Toast -->
+    <div class="copy-toast" id="copyToast">
+      <i class="fa-solid fa-check"></i> Text copied to clipboard
+    </div>
+
+    <!-- Chat Messages Stream -->
+    <div class="widget-body" id="chatBody">
+      <div class="msg-row bot">
+        <div class="msg-bubble">
+          Hello! Welcome to AI Customer Support 👋 How can I help you today?
+        </div>
+        <!-- PURE COPY ICON ONLY ON HOVER -->
+        <button class="copy-icon-btn" onclick="copyMessageText(this)" title="Copy text">
+          <i class="fa-regular fa-copy"></i>
+        </button>
+      </div>
+
+      <div class="quick-suggestions" id="quickSuggestions">
+        <button class="chip-btn" onclick="sendQuickPrompt('What are your delivery times?')">⚡ Delivery Info</button>
+        <button class="chip-btn" onclick="sendQuickPrompt('How can I track my order?')">📦 Order Tracking</button>
+        <button class="chip-btn" onclick="sendQuickPrompt('What payment methods are supported?')">💳 Payment
+          Options</button>
+      </div>
+    </div>
+
+    <!-- Input Footer -->
+    <div class="widget-footer">
+      <div class="input-row">
+        <input type="text" class="chat-input" id="userInput" placeholder="Type your message in English..."
+          autocomplete="off">
+        <button class="send-btn" id="sendBtn">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Django Static JS -->
+  <script src="{% static 'chatbot/js/main.js' %}"></script>
+</body>
+
+</html>
