@@ -1,11 +1,12 @@
-# 🤖 AI Customer Support Chatbot
+# 🤖 AI Customer Support Chatbot — Smart Electronics
 
-A modern, fully responsive AI-powered customer support chatbot built with **Django** and **Google Gemini API**. Designed as a floating website widget with a premium, professional UI.
+A modern, fully responsive AI-powered customer support chatbot built for **Smart Electronics** (a demo electronics store in Lahore) using **Django** and **Google Gemini API**. Designed as a floating website widget with a premium, professional UI.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-5.0-green?logo=django&logoColor=white)
 ![Gemini](https://img.shields.io/badge/Google_Gemini-API-orange?logo=google&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
+
 
 ---
 
